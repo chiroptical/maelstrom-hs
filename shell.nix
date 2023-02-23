@@ -1,9 +1,18 @@
-{pkgs, ...}:
+{
+  pkgs,
+  maelstrom,
+  ...
+}:
 pkgs.mkShell {
   inputsFrom = [
     (import ./maelstromHs.nix pkgs).env
   ];
   buildInputs = with pkgs; [
+    maelstrom
+    gnuplot
+    graphviz
+    ruby
+
     haskellPackages.cabal-install
     haskellPackages.ghcid
     haskellPackages.hlint

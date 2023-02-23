@@ -1,2 +1,9 @@
+# haskell
+dist-newstyle/
+
+# direnv
 .direnv/
 .envrc
+
+# maelstrom outputs
+store/
