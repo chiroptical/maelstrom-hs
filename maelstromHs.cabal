@@ -10,12 +10,15 @@ build-type:     Simple
 
 library
   exposed-modules:
+      Data.Aeson.Option
       Lib
+      Maelstrom.IO
   other-modules:
       Paths_maelstromHs
   hs-source-dirs:
       src
   default-extensions:
+      BlockArguments
       DeriveGeneric
       ImportQualifiedPost
       LambdaCase
@@ -37,6 +40,7 @@ executable maelstromHs
   hs-source-dirs:
       app
   default-extensions:
+      BlockArguments
       DeriveGeneric
       ImportQualifiedPost
       LambdaCase
@@ -61,6 +65,7 @@ test-suite maelstromHs-test
   hs-source-dirs:
       test
   default-extensions:
+      BlockArguments
       DeriveGeneric
       ImportQualifiedPost
       LambdaCase

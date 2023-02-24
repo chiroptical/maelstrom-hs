@@ -2,24 +2,16 @@
 
 module Lib (echoServer) where
 
-import Prelude hiding (getLine)
+import Prelude hiding (getLine, log)
 
 import Control.Monad (forever)
 import Data.Aeson
-import Data.ByteString (getLine, toStrict)
-import Data.Text (Text, unpack)
+import Data.Aeson.Option
+import Data.ByteString (getLine)
+import Data.Text (Text, pack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
-import System.IO (hFlush, hPutStrLn, stderr, stdout)
-
-dropN :: Int -> Options
-dropN n = defaultOptions {fieldLabelModifier = camelTo2 '_' . drop n}
-
-enum :: Options
-enum = defaultOptions {sumEncoding = ObjectWithSingleField}
-
-printErr :: Show a => a -> IO ()
-printErr = hPutStrLn stderr . show
+import Maelstrom.IO
 
 data MessageType = Init
   deriving (Show)
@@ -52,24 +44,23 @@ data MessageBody = MessageBody
   deriving (Show, Generic)
 
 instance ToJSON MessageBody where
-  toJSON = genericToJSON (dropN 1)
+  toJSON = genericToJSONWithUnderscore
 
 instance FromJSON MessageBody where
-  parseJSON = genericParseJSON (dropN 1)
+  parseJSON = genericParseJSONWithUnderscore
 
 data Message = Message
-  { _id :: Maybe Int
-  , _src :: Text
+  { _src :: Text
   , _dest :: Text
   , _body :: MessageBody
   }
   deriving (Show, Generic)
 
 instance ToJSON Message where
-  toJSON = genericToJSON (dropN 1)
+  toJSON = genericToJSONWithUnderscore
 
 instance FromJSON Message where
-  parseJSON = genericParseJSON (dropN 1)
+  parseJSON = genericParseJSONWithUnderscore
 
 data ResponseType = InitOk
   deriving (Show)
@@ -101,10 +92,10 @@ data ResponseBody = ResponseBody
   deriving (Show, Generic)
 
 instance ToJSON ResponseBody where
-  toJSON = genericToJSON (dropN 1)
+  toJSON = genericToJSONWithUnderscore
 
 instance FromJSON ResponseBody where
-  parseJSON = genericParseJSON (dropN 1)
+  parseJSON = genericParseJSONWithUnderscore
 
 data Response = Response
   { _src :: Text
@@ -114,34 +105,24 @@ data Response = Response
   deriving (Show, Generic)
 
 instance ToJSON Response where
-  toJSON = genericToJSON (dropN 1)
+  toJSON = genericToJSONWithUnderscore
 
 instance FromJSON Response where
-  parseJSON = genericParseJSON (dropN 1)
-
-jsonToString :: ToJSON a => a -> String
-jsonToString = unpack . decodeUtf8 . toStrict . encode
-
-reply :: ToJSON a => a -> IO ()
-reply r = do
-  putStrLn $ jsonToString r
-  hFlush stdout
+  parseJSON = genericParseJSONWithUnderscore
 
 echoServer :: IO ()
-echoServer =
-  printErr
-    "Starting server..."
-    forever
-    $ do
-      line <- getLine
-      printErr $ "Received " <> line
-      let eMessage = eitherDecodeStrict @Message line
-      case eMessage of
-        Left err ->
-          printErr $ "Decoding error " <> err
-        Right message -> do
-          let response =
-                Response message._dest message._src $
-                  ResponseBody 1 message._body._msgId InitOk
-          printErr $ "Sending " <> jsonToString response
-          reply response
+echoServer = do
+  log "Starting server..."
+  forever do
+    line <- getLine
+    log $ "Received " <> decodeUtf8 line
+    let eMessage = eitherDecodeStrict @Message line
+    case eMessage of
+      Left err ->
+        log $ "Decoding error " <> pack err
+      Right message -> do
+        let response =
+              Response message._dest message._src $
+                ResponseBody 1 message._body._msgId InitOk
+        log $ "Sending " <> jsonToText response
+        reply response
