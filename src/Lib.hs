@@ -7,7 +7,7 @@ import Prelude hiding (getLine)
 import Control.Monad (forever)
 import Data.Aeson
 import Data.ByteString (getLine, toStrict)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics (Generic)
 import System.IO (hFlush, hPutStrLn, stderr, stdout)
@@ -58,7 +58,7 @@ instance FromJSON MessageBody where
   parseJSON = genericParseJSON (dropN 1)
 
 data Message = Message
-  { _id :: Int
+  { _id :: Maybe Int
   , _src :: Text
   , _dest :: Text
   , _body :: MessageBody
@@ -71,11 +71,6 @@ instance ToJSON Message where
 instance FromJSON Message where
   parseJSON = genericParseJSON (dropN 1)
 
--- {src: "n1",
---  dest: "c1",
---  body: {msg_id: 123
---         in_reply_to: 1
---         type: "init_ok"}}
 data ResponseType = InitOk
   deriving (Show)
 
@@ -124,23 +119,29 @@ instance ToJSON Response where
 instance FromJSON Response where
   parseJSON = genericParseJSON (dropN 1)
 
-jsonToString :: ToJSON a => a -> Text
-jsonToString = decodeUtf8 . toStrict . encode
+jsonToString :: ToJSON a => a -> String
+jsonToString = unpack . decodeUtf8 . toStrict . encode
+
+reply :: ToJSON a => a -> IO ()
+reply r = do
+  putStrLn $ jsonToString r
+  hFlush stdout
 
 echoServer :: IO ()
 echoServer =
-  forever $ do
-    line <- getLine
-    printErr line
-    let eMessage = eitherDecodeStrict @Message line
-    case eMessage of
-      Left err ->
-        printErr err
-      Right message -> do
-        let response =
-              Response message._dest message._src $
-                ResponseBody 123 message._body._msgId InitOk
-        printErr $ "Initialized node " <> message._body._nodeId
-        printErr $ "Sending " <> jsonToString response
-        print $ jsonToString response
-        hFlush stdout
+  printErr
+    "Starting server..."
+    forever
+    $ do
+      line <- getLine
+      printErr $ "Received " <> line
+      let eMessage = eitherDecodeStrict @Message line
+      case eMessage of
+        Left err ->
+          printErr $ "Decoding error " <> err
+        Right message -> do
+          let response =
+                Response message._dest message._src $
+                  ResponseBody 1 message._body._msgId InitOk
+          printErr $ "Sending " <> jsonToString response
+          reply response
