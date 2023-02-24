@@ -1,7 +1,6 @@
 module Main where
 
-import Lib
+import Lib (echoServer)
 
 main :: IO ()
-main = do
-  putStrLn packageName
+main = echoServer

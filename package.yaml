@@ -2,12 +2,16 @@ name:    maelstromHs
 version: "0.0.1"
 
 dependencies:
+- aeson
 - base >= 4.7 && < 5
+- bytestring
+- text
 
 default-extensions:
 - DeriveGeneric
 - ImportQualifiedPost
 - LambdaCase
+- OverloadedRecordDot
 - OverloadedStrings
 - RecordWildCards
 - TypeApplications

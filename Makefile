@@ -1,3 +1,5 @@
+EXE := $(shell cabal exec which maelstromHs)
+
 build: hpack
 	cabal --ghc-options='${GHC_OPTIONS}' build
 
@@ -24,4 +26,9 @@ ghcid: hpack
 hlint: hpack
 	hlint .
 
-.PHONY: build hpack test run format-haskell format-nix format ghcid hlint
+maelstrom: build
+	maelstrom test \
+		-w echo --bin $(EXE) \
+		--nodes n1 --time-limit 10 --log-stderr
+
+.PHONY: build hpack test run format-haskell format-nix format ghcid hlint maelstrom
